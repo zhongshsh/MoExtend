@@ -1040,13 +1040,13 @@ class MixtralSparseMoeBlock(nn.Module):
             router_logits = torch.concat([router_logits, router_logits_vision], dim=1)
 
         routing_weights = F.softmax(router_logits, dim=1, dtype=torch.float)
+        _, selected_experts = torch.topk(routing_weights, self.top_k, dim=-1)
 
         if self.use_gate_vision:
             routing_weights2 = routing_weights.clone()
             routing_weights2 = routing_weights2.to(hidden_states.dtype)
             routing_weights2 = routing_weights2 + self.weight_scale(routing_weights2)
 
-            _, selected_experts = torch.topk(routing_weights, self.top_k, dim=-1)
             routing_weights = torch.gather(routing_weights2, 1, selected_experts)
         else:
             routing_weights = torch.gather(routing_weights, 1, selected_experts)
